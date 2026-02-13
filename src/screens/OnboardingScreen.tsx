@@ -49,6 +49,7 @@ const pages: OnboardingPage[] = [
 
 export function OnboardingScreen() {
   const [currentPage, setCurrentPage] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const { setOnboardingComplete: setStoreOnboarding, loadSampleData } = useStore();
 
@@ -60,10 +61,18 @@ export function OnboardingScreen() {
   };
 
   const handleGetStarted = async () => {
-    const sampleData = generateSampleData();
-    await loadSampleData(sampleData);
-    await setOnboardingComplete();
-    setStoreOnboarding(true);
+    if (isFinishing) return;
+
+    setIsFinishing(true);
+
+    try {
+      const sampleData = generateSampleData();
+      await loadSampleData(sampleData);
+    } finally {
+      await setOnboardingComplete();
+      setStoreOnboarding(true);
+      setIsFinishing(false);
+    }
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -110,6 +119,8 @@ export function OnboardingScreen() {
           onPress={isLastPage ? handleGetStarted : handleNext}
           variant="primary"
           size="large"
+          loading={isFinishing}
+          disabled={isFinishing}
           style={styles.button}
         />
         {!isLastPage && (
@@ -118,6 +129,7 @@ export function OnboardingScreen() {
             onPress={handleGetStarted}
             variant="ghost"
             size="medium"
+            disabled={isFinishing}
             style={styles.skipButton}
           />
         )}
